@@ -38,6 +38,8 @@ function ding_campaign_plus_relevant_content_type_render($subtype, $conf, $panel
       'path' => drupal_get_path_alias($_GET['q']),
     ),
   );
+  $count = $conf['ding_campaign_count'];
+  $offset = $conf['ding_campaign_offset'];
   $style = !empty($conf['style']) ? $conf['style'] : 'ribbon';
 
   // Check cache to see if campaign trigger has been calculated for this
@@ -48,7 +50,7 @@ function ding_campaign_plus_relevant_content_type_render($subtype, $conf, $panel
     $campaign_nids = $cache->data;
   }
   else {
-    $campaign_nids = ding_campaign_plus_get_matches($context_data, $style);
+    $campaign_nids = ding_campaign_plus_get_matches($context_data, $style,$offset,$count);
     cache_set($cid, $campaign_nids, 'cache', REQUEST_TIME + variable_get('ding_campaign_plus_expire', 900));
   }
 
@@ -82,6 +84,23 @@ function ding_campaign_plus_relevant_content_type_render($subtype, $conf, $panel
  */
 function ding_campaign_plus_relevant_content_type_edit_form($form, &$form_state) {
 
+  $form['ding_campaign_count'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Campaign count'),
+    '#description' => t('The maximum number of campaigns to display'),
+    '#default_value' => (isset($form_state['conf']['ding_campaign_count'])) ? $form_state['conf']['ding_campaign_count'] : 3,
+    '#size' => 2,
+    '#maxlength' => 2,
+  );
+
+  $form['ding_campaign_offset'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Campaign offset'),
+    '#description' => t('Which campaign should we count from when returning campaigns. This is used to avoid displaying the same campaigns when using multiple campaign panes on the same panel. Use 0 to return the most relevant campaigns.'),
+    '#default_value' => (isset($form_state['conf']['ding_campaign_offset'])) ? $form_state['conf']['ding_campaign_offset'] : 0,
+    '#size' => 3,
+    '#maxlength' => 3,
+  );
   $form['style'] = array(
     '#type' => 'select',
     '#title' => t('Campaign style'),
@@ -107,5 +126,7 @@ function ding_campaign_plus_relevant_content_type_edit_form_validate($form, &$fo
  * Implements hook_content_type_edit_form_submit().
  */
 function ding_campaign_plus_relevant_content_type_edit_form_submit($form, &$form_state) {
+  $form_state['conf']['ding_campaign_count'] = $form_state['values']['ding_campaign_count'];
+  $form_state['conf']['ding_campaign_offset'] = $form_state['values']['ding_campaign_offset'];
   $form_state['conf']['style'] = $form_state['values']['style'];
 }

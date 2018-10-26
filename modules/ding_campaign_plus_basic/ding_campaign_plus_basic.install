@@ -38,6 +38,12 @@ function ding_campaign_plus_basic_schema() {
         'type' => 'text',
         'not null' => TRUE,
       ),
+      'weight' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
     ),
     'primary key' => array('id'),
     'indexes' => array(

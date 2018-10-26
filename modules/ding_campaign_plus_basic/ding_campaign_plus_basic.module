@@ -104,13 +104,14 @@ function ding_campaign_plus_basic_node_insert($node) {
             $value = is_array($matches) ? end($matches) : '';
             break;
         }
-
+        $node_weight = field_get_items('node', $node, 'field_camp_weight');
         db_insert('ding_campaign_plus_basic')
           ->fields(array(
             'nid' => $node->nid,
             'type' => $rule['type'],
             'title' => $rule['value'],
             'value' => $value,
+            'weight' => $node_weight[0]['value'],
           ))->execute();
       }
     }
@@ -536,11 +537,11 @@ function _ding_campaign_plus_basic_match($type, $value) {
     ->condition('dcpb.type', $type);
 
   $query = db_select('ding_campaign_plus_basic', 'dcpb')
-    ->fields('dcpb', array('nid'))
+    ->fields('dcpb', array('nid','weight'))
     ->condition($or)
     ->condition('value', $value);
   $query->join('node', 'n', 'dcpb.nid = n.nid');
-  $nids = $query->condition('status', 1)
+  $nids = $query->condition('status', 1)->orderBy('weight', 'DESC')
     ->execute()
     ->fetchCol();
 

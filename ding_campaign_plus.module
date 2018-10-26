@@ -259,7 +259,7 @@ function ding_campaign_plus_page_alter(&$variables) {
  * @return array
  *   The ID's of the campaigns trigger by the context.
  */
-function ding_campaign_plus_get_matches(array $contexts, $style) {
+function ding_campaign_plus_get_matches(array $contexts, $style,$offset,$count) {
   // Remove empty contexts here an not in each hook below.
   foreach ($contexts as $key => $context) {
     if (is_null($context)) {
@@ -282,17 +282,30 @@ function ding_campaign_plus_get_matches(array $contexts, $style) {
 
     // Load changed date for the campaigns triggered.
     $nids = array_keys($campaigns);
+    $weigths = db_select('field_data_field_camp_weight', 'n')
+      ->fields('n', array('entity_id', 'field_camp_weight_value'))
+      ->condition('entity_id', $nids, 'IN')
+      ->execute()
+      ->fetchAllKeyed(0);
+    
     $times = db_select('node', 'n')
       ->fields('n', array('nid', 'changed'))
       ->condition('nid', $nids, 'IN')
       ->execute()
       ->fetchAllKeyed(0);
-
+    
     // Split the array into groups base on weight and add the changed times.
     $groups = array();
     foreach ($campaigns as $key => $item) {
-      $groups[$item][$key] = $times[$key];
+      $groups[$item][$key] = $weigths[$key];
     }
+    
+    
+    // Split the array into groups base on time created and add the changed times.
+    //$groups = array();
+    //foreach ($campaigns as $key => $item) {
+      //$groups[$item][$key] = $times[$key];
+    //}
 
     // Sort the groups based on the changed time inside each weighted group.
     $groups = array_map(function ($values) {
@@ -308,8 +321,8 @@ function ding_campaign_plus_get_matches(array $contexts, $style) {
       $campaigns[] = $nid;
     }
   }
-
-  return $campaigns;
+  return array_slice($campaigns, $offset, $count);
+  //return $campaigns;
 }
 
 /**
