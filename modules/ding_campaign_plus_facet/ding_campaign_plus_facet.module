@@ -584,8 +584,14 @@ function _ding_campaign_plus_facet_rule_form($number = 0, array $default_values 
     '#description' => t('Number of most common values wherein facet value is contained to trigger campaign'),
   );
 
-  $options = _ting_fetch_well_types();
-  $options = array_combine($options, $options);
+  //$options = _ting_fetch_well_types();
+  $ting_options = variable_get('ting_well_types');
+  //$options = array_flip($options);
+  $options = [];
+  foreach($ting_options as $key => $option)
+  {
+      $options[$key] = $key;
+  }
   asort($options);
   $form['facet_value_select_type'] = array(
     '#type' => 'select',
@@ -596,8 +602,13 @@ function _ding_campaign_plus_facet_rule_form($number = 0, array $default_values 
     '#size' => min(8, count($options)),
   );
 
-  $options = _ting_fetch_well_sources();
-  $options = array_combine($options, $options);
+  $ting_sources = variable_get('ting_well_sources');
+  //$options = array_flip($options);
+  $options = [];
+  foreach($ting_sources as $key => $option)
+  {
+      $options[$key] = $key;
+  }
   asort($options);
   $form['facet_value_select_source'] = array(
     '#type' => 'select',
@@ -925,11 +936,16 @@ function _ding_campaign_plus_facet_match($keys) {
     $facets = array_map(function ($facet) {
       return $facet['facet'];
     }, $facets);
-    $results = $current->getSearchRequest()
+    
+    module_load_include('client.inc', 'ting');
+    $query = oc_query_parser($current->search_key);
+    //likely need to refine this a little , to match original closer.
+    $results = ting_do_search($query,1,25,array('facets' => $facets,'allObjects' => FALSE));
+    /*$results = $current->getSearchRequest()
       ->withTermsPrFacet(30)
       ->withFacets($facets)
-      ->execute();
-    $search_facets = $results->getFacets();
+      ->execute();*/
+    $search_facets = $results->facets;
 
     // Loop rules to find most common matches in facets.
     foreach ($rules_group as $rules) {
@@ -971,7 +987,7 @@ function _ding_campaign_plus_facet_match($keys) {
           foreach ($rules as $rule) {
             if (isset($search_facets[$rule->facet])) {
               $values = (array) unserialize($rule->value);
-              $terms = $search_facets[$rule->facet]->getTerms();
+              $terms = $search_facets[$rule->facet]->terms;
 
               // Check if facets matches any of the terms left.
               foreach ($values as $value) {

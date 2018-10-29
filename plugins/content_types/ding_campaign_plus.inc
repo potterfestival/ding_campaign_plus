@@ -75,7 +75,22 @@ function ding_campaign_plus_relevant_content_type_render($subtype, $conf, $panel
         }
     }
   }
-
+  if (user_access('access campaign rules')) {
+    ctools_include('modal');
+    ctools_modal_add_js();
+    $modal_link = l(
+      t('Select campaigns'),
+      'ding_campaign_plus/nojs/select',
+      array(
+        'query' => drupal_get_destination(),
+        'attributes' => array(
+          'class' => array('ctools-use-modal'),
+          'title' => t('Select campaigns for this path'),
+        ),
+      )
+    );
+    $block->content .= '<p>' . $modal_link . '</p>';
+  }
   return $block;
 }
 

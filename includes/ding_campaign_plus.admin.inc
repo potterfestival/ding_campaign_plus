@@ -202,3 +202,183 @@ function theme_ding_campaign_plus_admin_form($variables) {
 
   return $output;
 }
+/**
+ * Ajax callback for selecting campaign on the current page.
+ *
+ * @param $type
+ *   Type.
+ * @param $input
+ *   Input.
+ */
+function ding_campaign_plus_admin_select($js = NULL, $step = NULL) 
+{
+  if (!$js) {
+    return drupal_get_form('ding_campaign_admin_select_form');
+  }
+  ctools_include('modal');
+  ctools_include('ajax');
+  $form_state = array(
+    'title' => t('Select campaigns'),
+    'ajax' => TRUE,
+  );
+  $output = ctools_modal_form_wrapper('ding_campaign_plus_admin_select_form', $form_state);
+  print ajax_render($output);
+  exit;
+    
+}
+/*
+ * frontend admin form for selecting active rules pr. page.
+ */
+function ding_campaign_plus_admin_select_form($form, &$form_state) {
+    
+    $destination = drupal_get_destination();
+    $split_destination = parse_url($destination['destination']);
+    $path = $split_destination['path'];
+
+    $path_alias = drupal_get_path_alias($path);
+    $front_page = variable_get('site_frontpage', 'node');
+    if ($path == $front_page) {
+      $path_alias = '<front>';
+    }
+    $path_arr = explode('/', $path);
+    $context_data = array(
+    'page' => node_load($path_arr[1],null,true),
+    'library' => isset($context[1]->data) ? $context[1]->data : NULL,
+    'search_term' => isset($context[2]->data) ? $context[2]->data : NULL,
+    'taxonomy_term' => isset($context[3]->data) ? $context[3]->data : NULL,
+    'path' => (object) array(
+      'raw' => $destination,
+      'path' => $path_alias,
+    ),
+  );
+  $conf = null;
+  $count = 300; //make sure we can include all the needed campaigns.
+  $offset = 0;
+  $style = !empty($conf['style']) ? $conf['style'] : 'ribbon';
+  /*
+   * Get all campaigns that can match.
+   * At first we only support path based rules , as we are missing the panel context.
+   */
+  $defaults = array();
+  
+  $defaults = ding_campaign_plus_get_matches($context_data, $style,$offset,$count);
+  $options = ding_campaign_plus_admin_get_list();
+  $form['path'] = array(
+    '#type' => 'hidden',
+    '#default_value' => $path,
+  );
+  $form['path_alias'] = array(
+    '#type' => 'hidden',
+    '#default_value' => $path_alias,
+  );
+  $form['ding_campaigns_wrap'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Available campaigns',
+  );
+  $form['ding_campaigns_wrap']['ding_campaigns'] = array(
+    '#type' => 'checkboxes',
+    '#default_value' => $defaults,
+    '#options' => $options,
+    '#description' => 'Select campaigns asociated with this node.',
+  );
+  
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+  );
+  return $form;
+}
+/*
+ * Submit form for ajax frontend selection tool.
+ */
+function ding_campaign_plus_admin_select_form_submit($form, &$form_state)
+{
+  $destination = drupal_get_destination();
+  $path = $form_state['values']['path'];
+  $path_arr = explode('/', $path);
+  $path_alias = $form_state['values']['path_alias'];
+  $defaults = $form['ding_campaigns_wrap']['ding_campaigns']['#default_value'];
+  // Throw away all disabled campaigns.
+  $campaigns = array_filter($form_state['input']['ding_campaigns']);
+  
+  $added = $campaigns;
+  $removed = array_diff_key($form['ding_campaigns_wrap']['ding_campaigns']['#options'],$added);
+  foreach ($added as $campaign) {
+      switch(ding_campaign_plus_admin_get_type($campaign)){
+          case'page':
+          case'path':
+          {
+              $node = node_load($campaign);
+              if(isset($node->tabs[DING_CAMPAIGN_PLUS_BASIC_TYPE]))
+              {
+                  $node->tabs[DING_CAMPAIGN_PLUS_BASIC_TYPE]['rules'][] = array('type' => 'page' , 'value' =>  $node->title . " [" . $path_arr[1] . "]");
+              }
+              else
+              {
+                $node->tabs[DING_CAMPAIGN_PLUS_BASIC_TYPE] = [];
+                $node->tabs[DING_CAMPAIGN_PLUS_BASIC_TYPE]['rules'] = array();
+                $node->tabs[DING_CAMPAIGN_PLUS_BASIC_TYPE]['rules'][] = array('type' => 'page' , 'value' =>  $node->title . " [" . $path_arr[1] . "]");
+              }
+              ding_campaign_plus_basic_node_update($node);
+              break;
+          }
+          default:
+          {
+              $node = node_load($campaign);
+              $node->tabs[DING_CAMPAIGN_PLUS_BASIC_TYPE] = [];
+              $node->tabs[DING_CAMPAIGN_PLUS_BASIC_TYPE]['rules'] = array();
+              $node->tabs[DING_CAMPAIGN_PLUS_BASIC_TYPE]['rules'][] = array('type' => 'page' , 'value' => $node->title . " [" . $path_arr[1] . "]");
+              ding_campaign_plus_basic_node_update($node);
+          }
+      }
+  }
+  foreach ($removed as $key => $campaign) {
+      switch(ding_campaign_plus_admin_get_type($key)){
+          case'page':
+          case'path':
+          {
+              ding_campaign_plus_basic_node_delete(node_load($key));
+          }
+      }
+  }
+  if (isset($form_state['ajax']) && $form_state['ajax']) {
+    ctools_include('ajax');
+    $options = drupal_parse_url($destination['destination']);
+    $commands[] = ctools_ajax_command_redirect($options['path'], 0, $options);
+    print ajax_render($commands);
+    exit;
+  }
+}
+/**
+ * Fetch available campaigns.
+ *
+ * @return
+ *   Array of campaigns with ids and titles.
+ */
+function ding_campaign_plus_admin_get_list() {
+  $result = db_query("SELECT n.nid, n.title FROM {node} n
+    WHERE n.status <> 0
+      AND n.type = 'ding_campaign_plus'
+    ORDER BY n.title")
+    ->fetchAll();
+
+  $campaigns = array();
+
+  foreach ($result as $k => $v) {
+    $campaigns[$v->nid] = $v->title;
+  }
+
+  return $campaigns;
+}
+/*
+ * Get campaign types from db 
+ */
+ function ding_campaign_plus_admin_get_type($cid)
+ {
+     $query = db_select('ding_campaign_plus_basic', 'dcpb')
+    ->fields('dcpb', array('type'))
+    ->condition('nid', $cid)->execute();
+     
+    $result = $query->fetchObject();
+    return $result->type; 
+ }

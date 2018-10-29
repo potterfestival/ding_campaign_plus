@@ -250,7 +250,7 @@ function _ding_campaign_plus_search_match($keys) {
     {
         return $nids;
     }
-    $query = drupal_static('ting_search_query');
+    $query = $current->search_key;
 
     $no_of_results = $current->numTotalObjects;
     if ($no_of_results > 0) {
@@ -258,13 +258,16 @@ function _ding_campaign_plus_search_match($keys) {
       foreach ($rules as $rule) {
         // Do combined search to get intersection between user search and
         // campaign trigger CQL string.
-        $cqlDoctor = new TingSearchCqlDoctor($query);
-        $query = $cqlDoctor->string_to_cql();
-        $searchRequest = $current->getSearchRequest();
-        $searchRequest = $searchRequest->withFullTextQuery('"' . $query . '" AND (' . $rule->query . ')');
-        $results = $searchRequest->execute();
-
-        if (($results->getNumTotalObjects() / $no_of_results) * 100 >= $rule->percent) {
+        //$cqlDoctor = new TingSearchCqlDoctor($query);
+        //$query = $cqlDoctor->string_to_cql();
+        //$searchRequest = $current->getSearchRequest();
+        //$searchRequest = $searchRequest->withFullTextQuery();
+        //$results = $searchRequest->execute(); 
+       module_load_include('client.inc', 'ting');
+       $query_string = oc_query_parser('"' . $query . '" AND ' . $rule->query . '');
+       //likely need to refine this a little , to match original closer.
+       $results = ting_do_search($query_string, 1, 25, array('facets' => array(), 'allObjects' => FALSE));
+        if (($results->numTotalObjects / $no_of_results) * 100 >= $rule->percent) {
           $nids[] = $rule->nid;
         }
       }

@@ -21,7 +21,15 @@ function ding_campaign_plus_menu() {
     'access arguments' => array('administer site configuration'),
     'file' => 'includes/ding_campaign_plus.admin.inc',
   );
-
+$items['ding_campaign_plus/%ctools_js/select'] = array(
+    'title' => 'Select campaigns',
+    'description' => 'Select campaigns for the current path',
+    'page callback' => 'ding_campaign_plus_admin_select',
+    'page arguments' => array(1),
+    'access arguments' => array('access campaign rules'),
+    'file' => 'includes/ding_campaign_plus.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
   return $items;
 }
 

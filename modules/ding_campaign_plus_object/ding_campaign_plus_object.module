@@ -236,13 +236,16 @@ function _ding_campaign_plus_object_match($ting_object_id) {
     foreach ($rules as $rule) {
       // Run campaign search query combined with the object id to see if it
       // contains the current viewed ting object.
-      $results = ting_start_query()
+       module_load_include('client.inc', 'ting');
+       //likely need to refine this a little , to match original closer.
+       $results = ting_do_search(oc_query_parser('"' . $rule->query . '" AND (' . $ting_object_id . ')'), 1, 25, array('facets' => array(), 'allObjects' => FALSE));
+      /*$results = ting_start_query()
         ->withFullTextQuery('(' . $rule->query . ') AND (' . $ting_object_id . ')')
         ->withCount(0)
         ->withPage(0)
-        ->execute();
+        ->execute();*/
 
-      if ($results->getNumTotalObjects() > 0) {
+      if ($results->numTotalObjects > 0) {
         $nids[] = $rule->nid;
       }
     }
@@ -263,7 +266,7 @@ function ding_campaign_plus_object_ding_campaign_plus_validator($nid) {
   $query->join('node', 'n', 'dcpo.nid = n.nid');
   $rules = $query->condition('status', 1)
     ->execute();
-
+$request = ting_get_request_factory();
   if ($rules->rowCount() > 0) {
     $active = TRUE;
     foreach ($rules as $rule) {
