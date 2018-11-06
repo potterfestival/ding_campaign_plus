@@ -43,7 +43,7 @@ function ding_campaign_plus_relevant_content_type_render($subtype, $conf, $panel
   // Check cache to see if campaign trigger has been calculated for this
   // context.
   $cid = _ding_campaign_plus_cache_id($context_data, $style);
-  $cache = null;// cache_get($cid);
+  $cache = cache_get($cid);
   if (isset($cache->data) && REQUEST_TIME < $cache->expire) {
     $campaign_nids = $cache->data;
   }
@@ -62,15 +62,15 @@ function ding_campaign_plus_relevant_content_type_render($subtype, $conf, $panel
       // Check if campaign matches style.
       if ($campaign->field_ding_campaign_plus_style[LANGUAGE_NONE][0]['value'] === $style) {
         // Campaign found that matches style.
-        
+        break;
       }
       else {
         $campaign = FALSE;
       }
-    
-        if ($campaign) {
-          $block->content .= drupal_render(node_view($campaign, 'full'));
-        }
+    }
+
+    if ($campaign) {
+      $block->content = node_view($campaign, 'full');
     }
   }
 
