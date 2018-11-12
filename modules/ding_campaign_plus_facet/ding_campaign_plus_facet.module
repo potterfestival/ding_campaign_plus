@@ -926,7 +926,7 @@ function _ding_campaign_plus_facet_match($keys) {
 
   if (!empty($rules_group)) {
     // Request a clone of the current search and result objects.
-    $current = ting_search_current_results();
+    $current =drupal_static('ting_search_results');
 
     // Add all facets to the search query (or all campaign plus facets).
     $facets = _ding_campaign_plus_facet_get_facets();
