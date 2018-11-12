@@ -244,10 +244,14 @@ function _ding_campaign_plus_search_match($keys) {
 
   if ($rules->rowCount() > 0) {
     // Request a clone of the current search and result objects.
-    $current = ting_search_current_results();
-    $query = $current->getSearchRequest()->getFullTextQuery();
-
-    $no_of_results = $current->getNumTotalObjects();
+    $current = &drupal_static('ting_search_results');	   
+    //$query = $current->getSearchRequest()->getFullTextQuery();
+    if($current == null)	
+    {	
+        return $nids;	
+    }	
+    $query = $current->search_key;	
+     $no_of_results = $current->numTotalObjects;
     if ($no_of_results > 0) {
       // Loop rules to find percentage match in facets.
       foreach ($rules as $rule) {

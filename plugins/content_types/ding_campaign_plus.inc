@@ -45,7 +45,7 @@ function ding_campaign_plus_relevant_content_type_render($subtype, $conf, $panel
   // Check cache to see if campaign trigger has been calculated for this
   // context.
   $cid = _ding_campaign_plus_cache_id($context_data, $style);
-  $cache = cache_get($cid);
+  $cache = null;//cache_get($cid);
   if (isset($cache->data) && REQUEST_TIME < $cache->expire) {
     $campaign_nids = $cache->data;
   }
@@ -72,7 +72,7 @@ function ding_campaign_plus_relevant_content_type_render($subtype, $conf, $panel
     }
 
     if ($campaign) {
-      $block->content = node_view($campaign, 'full');
+      $block->content = drupal_render(node_view($campaign, 'full'));
     }
   }
   if (user_access('access campaign rules')) {
@@ -90,6 +90,7 @@ function ding_campaign_plus_relevant_content_type_render($subtype, $conf, $panel
       )
     );
     $block->content .= '<p>' . $modal_link . '</p>';
+    
   }
   return $block;
 }
