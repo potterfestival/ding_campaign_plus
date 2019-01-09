@@ -248,7 +248,7 @@ function ding_campaign_plus_admin_select_form($form, &$form_state) {
     'taxonomy_term' => isset($context[3]->data) ? $context[3]->data : NULL,
     'path' => (object) array(
       'raw' => $destination,
-      'path' => $path_alias,
+      'path' => $path,
     ),
   );
   $conf = null;
@@ -311,13 +311,13 @@ function ding_campaign_plus_admin_select_form_submit($form, &$form_state)
               $node = node_load($campaign);
               if(isset($node->tabs[DING_CAMPAIGN_PLUS_BASIC_TYPE]))
               {
-                  $node->tabs[DING_CAMPAIGN_PLUS_BASIC_TYPE]['rules'][] = array('type' => 'page' , 'value' =>  $node->title . " [" . $path_arr[1] . "]");
+                  $node->tabs[DING_CAMPAIGN_PLUS_BASIC_TYPE]['rules'][] = array('type' => 'path' , 'value' =>  $path);
               }
               else
               {
                 $node->tabs[DING_CAMPAIGN_PLUS_BASIC_TYPE] = [];
                 $node->tabs[DING_CAMPAIGN_PLUS_BASIC_TYPE]['rules'] = array();
-                $node->tabs[DING_CAMPAIGN_PLUS_BASIC_TYPE]['rules'][] = array('type' => 'page' , 'value' =>  $node->title . " [" . $path_arr[1] . "]");
+                $node->tabs[DING_CAMPAIGN_PLUS_BASIC_TYPE]['rules'][] = array('type' => 'path' , 'value' =>  $path);
               }
               ding_campaign_plus_basic_node_update($node);
               break;
@@ -327,7 +327,7 @@ function ding_campaign_plus_admin_select_form_submit($form, &$form_state)
               $node = node_load($campaign);
               $node->tabs[DING_CAMPAIGN_PLUS_BASIC_TYPE] = [];
               $node->tabs[DING_CAMPAIGN_PLUS_BASIC_TYPE]['rules'] = array();
-              $node->tabs[DING_CAMPAIGN_PLUS_BASIC_TYPE]['rules'][] = array('type' => 'page' , 'value' => $node->title . " [" . $path_arr[1] . "]");
+              $node->tabs[DING_CAMPAIGN_PLUS_BASIC_TYPE]['rules'][] = array('type' => 'path' , 'value' => $path);
               ding_campaign_plus_basic_node_update($node);
           }
       }

@@ -75,7 +75,7 @@ function ding_campaign_plus_relevant_content_type_render($subtype, $conf, $panel
       $block->content = drupal_render(node_view($campaign, 'full'));
     }
   }
-  if (user_access('access campaign rules')) {
+  if (user_access('administer site configuration')) {
     ctools_include('modal');
     ctools_modal_add_js();
     $modal_link = l(
